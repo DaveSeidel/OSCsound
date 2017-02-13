@@ -18,7 +18,7 @@ def process_args():
     parser = argparse.ArgumentParser(prog='OSCsound',
                                      description='OSCsound - version 0.2-ds')
 
-    parser.add_argument("csd_file", help="Csound CSD file to run")
+    parser.add_argument("-c", "--csd_file", help="Csound CSD file")
     parser.add_argument("-p", "--port", help="server port (default 7110)",
                         type=int, default=7110)
 
