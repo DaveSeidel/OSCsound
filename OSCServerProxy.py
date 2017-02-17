@@ -10,8 +10,8 @@ class OSCServerProxy():
 
     def __init__(self, csound_proxy, port):
         """Args:
-            csound_proxy (:obj:`CsoundProxy`): a Csound instance
-            port (int): port OSCServer will listen on
+            csound_proxy: a Csound instance
+            port: port OSCServer will listen on
         """
         print "osc, port=%s" % (port)
         self._csound = csound_proxy.csound
@@ -23,7 +23,7 @@ class OSCServerProxy():
         """Sets up the OSC server
 
         Returns:
-            :obj:`OSCServerProxy`: this instance
+            : this instance
         """
 
         print "osc enter"
