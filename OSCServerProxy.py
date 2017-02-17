@@ -4,7 +4,15 @@ import types
 from OSC import OSCServer
 
 class OSCServerProxy():
+    """An OSC server wrapper that works in conjunction with a CsoundProxy
+    instance, for use in a 'with' scope.
+    """
+
     def __init__(self, csound_proxy, port):
+        """Args:
+            csound_proxy (:obj:`CsoundProxy`): a Csound instance
+            port (int): port OSCServer will listen on
+        """
         print "osc, port=%s" % (port)
         self._csound = csound_proxy.csound
         self._csPerfThread = csound_proxy.csPerfThread
@@ -12,6 +20,12 @@ class OSCServerProxy():
         self._run = True
 
     def __enter__(self):
+        """Sets up the OSC server
+
+        Returns:
+            :obj:`OSCServerProxy`: this instance
+        """
+
         print "osc enter"
         self._server = OSCServer(("localhost", self._port))
 
@@ -26,6 +40,8 @@ class OSCServerProxy():
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        """Shuts down the OSC server"""
+
         print "osc exit"
         if exc_type is not None:
             print exc_type, exc_value, traceback
@@ -33,6 +49,8 @@ class OSCServerProxy():
         self._server.close()
 
     def run(self):
+        """This is the server loop, exits on termination."""
+
         print "osc run"
         while self._run is True:
             sleep(1)
