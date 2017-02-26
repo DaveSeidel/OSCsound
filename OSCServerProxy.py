@@ -1,4 +1,6 @@
+import sys
 from time import sleep
+import traceback
 import types
 
 from OSC import OSCServer
@@ -85,14 +87,18 @@ class OSCServerProxy():
         self._csound.SetChannel(channel_name, float_value)
 
     def _default_callback(self, path, tags, args, source):
-        print "osc default_callback: %s %a" % (path, str(args))
-        if path.startswith("/cc/"):
-            channel_name = path[4:]
-            float_value = args[0]
-            print "args: %s %s" % (channel_name, float_value)
-            self._csound.SetChannel(channel_name, float_value)
-        else:
-            print "ignoring message:", path, tags, args
+        try:
+            print "osc default_callback: %s %s %s" % (path, tags, str(args))
+            if path.startswith("/cc/"):
+                channel_name = path[4:]
+                float_value = args[0]
+                print "args: %s %s" % (channel_name, float_value)
+                self._csound.SetChannel(channel_name, float_value)
+            else:
+                print "ignoring message"
+        except Exception as e:
+            print e.message
+            traceback.print_exc(file=sys.stdout)
 
     def _quit_callback(self, path, tags, args, source):
         print "osc quit"
