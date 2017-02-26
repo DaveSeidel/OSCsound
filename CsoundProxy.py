@@ -1,4 +1,4 @@
-from csnd6 import Csound, CsoundPerformanceThread, csoundInitialize
+import ctcsound
 
 class CsoundProxy(object):
     """A Csound instance wrapper for use in a 'with' scope.
@@ -19,18 +19,18 @@ class CsoundProxy(object):
         print "csound: csd_file=%s options=%s" % (csd_file, options)
         self._csd_file = csd_file
         self._options = options
-        self._csound = None
-        self._csPerfThread = None
+        self._cs = None
+        self._pt = None
 
     @property
-    def csound(self):
+    def cs(self):
         """the underlying Csound instance"""
-        return self._csound
+        return self._cs
 
     @property
-    def csPerfThread(self):
+    def pt(self):
         """the CsoundPerformanceThread instance"""
-        return self._csPerfThread
+        return self._pt
 
     def __enter__(self):
         """Starts up the Csound/CsoundPerformanceThread instances
@@ -40,15 +40,13 @@ class CsoundProxy(object):
         """
         print "csound enter"
 
-        csoundInitialize(3)
+        self._cs = ctcsound.Csound()
+        map(self._cs.setOption, self._options)
+        self._cs.compileCsd(self._csd_file)
+        self._cs.start()
 
-        self._csound = Csound()
-        map(self._csound.SetOption, self._options)
-        self._csound.Compile(self._csd_file)
-        self._csound.Start()
-
-        self._csPerfThread = CsoundPerformanceThread(self._csound)
-        self._csPerfThread.Play()
+        self._pt = ctcsound.CsoundPerformanceThread(self._cs.csound())
+        self._pt.play()
 
         return self
 
@@ -58,6 +56,6 @@ class CsoundProxy(object):
         if exc_type is not None:
             print exc_type, exc_value, traceback
 
-        self._csPerfThread.Stop()
-        self._csPerfThread.Join()
-        self._csound.Stop()
+        self._pt.stop()
+        self._pt.join()
+        self._cs.stop()

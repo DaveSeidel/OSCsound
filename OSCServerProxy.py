@@ -1,3 +1,4 @@
+from collections import namedtuple
 import sys
 from time import sleep
 import traceback
@@ -5,20 +6,25 @@ import types
 
 from OSC import OSCServer
 
-class OSCServerProxy():
+
+OSCCallback = namedtuple("OSCCallback", "address callback")
+
+
+class OSCServerProxy(object):
     """An OSC server wrapper that works in conjunction with a CsoundProxy
     instance, for use in a 'with' scope.
     """
 
-    def __init__(self, csound_proxy, port):
+    def __init__(self, csound_proxy, port, handlers=[]):
         """Args:
             csound_proxy: a Csound instance
             port: port OSCServer will listen on
         """
         print "osc, port=%s" % (port)
-        self._csound = csound_proxy.csound
-        self._csPerfThread = csound_proxy.csPerfThread
+        self._cs = csound_proxy.cs
+        self._pt = csound_proxy.pt
         self._port = port
+        self._handlers = handlers
         self._run = True
 
     def __enter__(self):
@@ -38,6 +44,11 @@ class OSCServerProxy():
         self._server.addMsgHandler("/cc", self._handle_cc)
         self._server.addMsgHandler("/quit", self._quit_callback)
         self._server.addMsgHandler("default", self._default_callback)
+
+        for handler in self._handlers:
+            if not isinstance(handler, OSCCallback):
+                print "Error: rejecting callback '', wrong type" % str(handler)
+            self._server.addMsgHandler(handler.address, handler.callback)
 
         return self
 
@@ -73,10 +84,10 @@ class OSCServerProxy():
 
         score = args[0]
         print "osc score: \"%s\"" % (score)
-        self._csPerfThread.InputMessage(score)
+        self._pt.inputMessage(score)
 
     def _handle_cc(self, path, tags, args, source):
-        print "osc cc: %s" % (str(args))
+        print "osc cc: %s %s %s" % (path, tags, str(args))
         if len(args) != 2:
             print "Error: /cc must have two args: channelName floatValue"
             return
@@ -84,7 +95,7 @@ class OSCServerProxy():
         channel_name = args[0]
         float_value = args[1]
         print "cc args: %s %s" % (channel_name, float_value)
-        self._csound.SetChannel(channel_name, float_value)
+        self._cs.setControlChannel(channel_name, float_value)
 
     def _default_callback(self, path, tags, args, source):
         try:
@@ -93,7 +104,7 @@ class OSCServerProxy():
                 channel_name = path[4:]
                 float_value = args[0]
                 print "args: %s %s" % (channel_name, float_value)
-                self._csound.SetChannel(channel_name, float_value)
+                self._cs.setControlChannel(channel_name, float_value)
             else:
                 print "ignoring message"
         except Exception as e:
